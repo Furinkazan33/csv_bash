@@ -103,7 +103,7 @@ set() {
 
 _new_id(){
     local lastline=$(tail -n +2 "$file" | tail -1)
-    local lastid=$(echo $lastline | get id)
+    local lastid=$(echo $lastline | get ID)
     
     id=$((10#$lastid + 1))
     #id=$(printf "%010d" $id)
@@ -119,7 +119,7 @@ _insert() {
     [ ${#*} -ne 0 ] && echo "Usage: insert stdin" && return 1
     
     while read newline; do
-	echo $newline | set id $(_new_id) >> "$file"
+	echo $newline | set ID $(_new_id) >> "$file"
     done < "/dev/stdin"
 }
 
@@ -130,15 +130,16 @@ save() {
     local OLDIFS=$IFS
 
     IFS=$'\n' && while read newline; do
-        local id=$(echo $newline | get id)
-        local oldline=$(find id $id)
+        local id=$(echo $newline | get ID)
+        local oldline=$(find ID $id)
 
         if [ -z $oldline ]; then
             echo $newline | _insert
         else
-            sed "s/^$oldline$/$newline/" "$file" > "$file.tmp"
-            mv "$file.tmp" "$file"
+            sed s/^${oldline}$/${newline}/ $file > $file.tmp
+            mv $file.tmp $file
         fi
+        echo $oldline
         echo $newline
 	
     done < "/dev/stdin"
@@ -152,8 +153,8 @@ delete() {
     local rc=0
 
     while read line; do
-	id=$(echo $line | get id)
-	dbline=$(find id $id)
+	id=$(echo $line | get ID)
+	dbline=$(find ID $id)
 
 	if [ -z "$dbline" ]; then
 	    rc=1
