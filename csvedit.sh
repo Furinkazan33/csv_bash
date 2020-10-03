@@ -9,9 +9,6 @@
 #2;Gertrude;102;Soulac
 ##
 #############################################################
-#TODO: Translate to English
-#TODO: Seems like the save function is not working
-#############################################################
 # Example :
 # . csvedit test.csv
 # find
@@ -55,7 +52,7 @@ file() {
     echo "$file"
 }
 
-rows() {
+headers() {
     head -n 1 "$file"
 }
 
@@ -170,8 +167,8 @@ delete() {
 }
 
 # TODO: after
-row_add() {
-    [ ${#*} -ne 1 ] && [ ${#*} -ne 2 ]  && echo "Usage: row_add new_row [after_row]" && return 1
+column_add() {
+    [ ${#*} -ne 1 ] && [ ${#*} -ne 2 ]  && echo "Usage: column_add new_row [after_row]" && return 1
 
     new_row=$1
 
@@ -189,8 +186,8 @@ row_add() {
     echo $new_header
 }
 
-row_delete() {
-    [ ${#*} -ne 1 ] && echo "Usage: row_delete row" && return 1
+column_delete() {
+    [ ${#*} -ne 1 ] && echo "Usage: column_delete row" && return 1
 
     row=$1
     
@@ -199,12 +196,9 @@ row_delete() {
     [ $? -ne 0 ] && echo "Colonne inexistante !" && return 1
 
     [ $index -eq 1 ] && echo "Impossible de supprimer la cle primaire !" && return 1
-
-    
-    
 }
 
-function help() {
+function help_fr() {
     echo "Liste des commandes :"
     echo -e "help\t\tAffiche l'aide"
     echo -e "file\t\tAffiche le fichier de travail"
@@ -216,9 +210,26 @@ function help() {
     echo -e "new\t\tCreer une nouvelle ligne"
     echo -e "save\t\tEnregistre les lignes dans le fichier de travail"
     echo -e "delete\t\tSupprime les lignes"
-    echo -e "rows\t\tAffiche les entetes des colonnes"
-    echo -e "row_add\t\tAjoute une colonne"
-    echo -e "row_delete\tSupprime une colonne"
+    echo -e "headers\t\tAffiche les entetes des colonnes"
+    echo -e "column_add\t\tAjoute une colonne"
+    echo -e "column_delete\tSupprime une colonne"
+}
+
+function help() {
+    echo "Commands list :"
+    echo -e "help\t\tPrint this help"
+    echo -e "file\t\tPrint working file name"
+    echo -e "find\t\tFind rows by column value"
+    echo -e "find_one\tSame as above, returns only the first occurence found"
+    echo -e "limit\t\tLimits the number of results"
+    echo -e "get\t\tGet the values of the selected column"
+    echo -e "set\t\tSet the values of the selected columns"
+    echo -e "new\t\tCreate a new line"
+    echo -e "save\t\tSave the lines in the working file"
+    echo -e "delete\t\tDelete the lines"
+    echo -e "headers\t\tPrint the headers names"
+    echo -e "column_add\t\tAdd a column"
+    echo -e "column_delete\tRemove a column"
 }
 
 help
