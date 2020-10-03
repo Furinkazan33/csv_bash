@@ -12,23 +12,22 @@ ID;NAME;AGE;CITY
 - Test commands :
 ```
 bash
-
 . csvedit.sh my_file.csv
 
-Liste des commandes :
-help            Affiche l'aide
-file            Affiche le fichier de travail
-find            Recherche par valeur d'une colonne
-find_one        Idem recherche mais ne renvoi que la premiere ligne
-limit           Limite le nombre des resultats
-get             Retourne la valeur du champ des ligness
-set             Modifie la valeur du champs dans les lignes
-new             Creer une nouvelle ligne
-save            Enregistre les lignes dans le fichier de travail
-delete          Supprime les lignes
-rows            Affiche les entetes des colonnes
-row_add         Ajoute une colonne
-row_delete      Supprime une colonne
+Commands list :
+help            Print this help
+file            Print working file name
+find            Find rows by column value
+find_one        Same as above, returns only the first occurence found
+limit           Limits the number of results
+get             Get the values of the selected column
+set             Set the values of the selected columns
+new             Create a new line
+save            Save the lines in the working file
+delete          Delete the lines
+headers         Print the headers names
+column_add      Add a column
+column_delete   Remove a column
 
 
 find
