@@ -228,7 +228,7 @@ function help() {
     echo -e "save\t\tSave the lines in the working file"
     echo -e "delete\t\tDelete the lines"
     echo -e "headers\t\tPrint the headers names"
-    echo -e "column_add\t\tAdd a column"
+    echo -e "column_add\tAdd a column"
     echo -e "column_delete\tRemove a column"
 }
 
