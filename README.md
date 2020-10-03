@@ -32,13 +32,13 @@ row_delete      Supprime une colonne
 
 
 find
-1;Mathieu;35;Bordeaux
+1;*Mathieu;35*;Bordeaux
 2;Gertrude;102;Soulac
 
 find ID 1 | set AGE 55 | set NAME Bastian | save
-1;Bastian;55;Bordeaux
+1;*Bastian;55*;Bordeaux
 
 find
-1;Bastian;55;Bordeaux
+1;*Bastian;55*;Bordeaux
 2;Gertrude;102;Soulac
 ```
