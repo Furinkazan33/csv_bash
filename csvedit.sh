@@ -139,7 +139,6 @@ save() {
             sed s/^${oldline}$/${newline}/ $file > $file.tmp
             mv $file.tmp $file
         fi
-        echo $oldline
         echo $newline
 	
     done < "/dev/stdin"
