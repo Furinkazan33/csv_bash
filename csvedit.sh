@@ -2,14 +2,14 @@
 #############################################################
 # Author : Mathieu Vidalies https://github.com/Furinkazan33
 #############################################################
-# Script to handle csv files like :
-##
-#ID;NAME;AGE;CITY
-#1;Mathieu;35;Bordeaux
-#2;Gertrude;102;Soulac
-##
+# Script to handle csv files
 #############################################################
-# Example :
+# Example file :
+# ID;NAME;AGE;CITY
+# 1;Mathieu;35;Bordeaux
+# 2;Gertrude;102;Soulac
+#
+# Test commands :
 # . csvedit test.csv
 # find
 # find ID 1 | set AGE 55
@@ -24,17 +24,17 @@
 
 
 # File sorted by id
-file=$1
+FILE=$1
     
-# File structure definition
-rows2=()
+# File header
+HEADER=()
 
 init_rows() {
-    local def=$(head -n 1 "$file")
+    local def=$(head -n 1 "$FILE")
     local OLDIFS=$IFS
 
     IFS=";" && for r in $def; do
-	rows2+=($r)
+	HEADER+=($r)
     done
 
     IFS=$OLDIFS
@@ -42,28 +42,28 @@ init_rows() {
 init_rows
 
 _get_row_index() {
-    for i in ${!rows2[@]}; do
-	[ $1 == "${rows2[$i]}" ] && echo $(($i+1)) && return 0
+    for i in ${!HEADER[@]}; do
+	[ $1 == "${HEADER[$i]}" ] && echo $(($i+1)) && return 0
     done
     echo -1 && return 1
 }
 
 file() {
-    echo "$file"
+    echo "$FILE"
 }
 
 headers() {
-    head -n 1 "$file"
+    head -n 1 "$FILE"
 }
 
 find() {
     [ ${#*} -ne 0 ] && [ ${#*} -ne 2 ] && echo "Usage: find field value" && return 1    
-    [ ${#*} -eq 0 ] && tail -n +2 "$file" && return 0
+    [ ${#*} -eq 0 ] && tail -n +2 "$FILE" && return 0
 
     index=$(_get_row_index "$1")
     [ $? -ne 0 ] && echo "Champs inconnu: $1" && return 1
 
-    tail -n +2 "$file" | awk -v row=$index -v value=$2 -F ";" '{ if($row==value) print $0 }'
+    tail -n +2 "$FILE" | awk -v row=$index -v value=$2 -F ";" '{ if($row==value) print $0 }'
 }
 
 find_one() {
@@ -84,6 +84,7 @@ get() {
 }
 
 
+# Set can be done only on whole rows (ie, not after a get)
 set() {
     [ ${#*} -ne 2 ] && echo "Usage: set field value" && return 1
 
@@ -99,7 +100,7 @@ set() {
 }
 
 _new_id(){
-    local lastline=$(tail -n +2 "$file" | tail -1)
+    local lastline=$(tail -n +2 "$FILE" | tail -1)
     local lastid=$(echo $lastline | get ID)
     
     id=$((10#$lastid + 1))
@@ -108,7 +109,28 @@ _new_id(){
     echo $id
 }
 
+_count_columns() {
+    OLDIFS=$IFS
+    IFS=";" && echo $* | wc -w
+    IFS=$OLDIFS
+}
+
+_check_new_line() {
+    local row=$*
+    local c_col=$(_count_columns $row)
+    local c_head=$(_count_columns `headers`)
+
+    [ $c_col -eq $(($c_head - 1)) ] && { echo 0; return 0; }
+    echo 1; return 1;
+}
+
 new() {
+    ([ $# -ne 1 ] || [ ! `_check_new_line $1` -eq 0 ]) && { 
+        newline=$(headers | cut -d";" -f2-)
+        echo "Usage: new \"$newline\""
+        return 1
+    }
+
     echo $(_new_id)";"$1
 }
 
@@ -116,11 +138,12 @@ _insert() {
     [ ${#*} -ne 0 ] && echo "Usage: insert stdin" && return 1
     
     while read newline; do
-	echo $newline | set ID $(_new_id) >> "$file"
+	echo $newline | set ID $(_new_id) >> "$FILE"
     done < "/dev/stdin"
 }
 
 # Insert or replace
+# Save can be done only on whole rows (ie, not after a get)
 save() {
     [ ${#*} -ne 0 ] && echo "Usage: save stdin" && return 1
 
@@ -133,8 +156,8 @@ save() {
         if [ -z $oldline ]; then
             echo $newline | _insert
         else
-            sed s/^${oldline}$/${newline}/ $file > $file.tmp
-            mv $file.tmp $file
+            sed s/^${oldline}$/${newline}/ $FILE > $FILE.tmp
+            mv $FILE.tmp $FILE
         fi
         echo $newline
 	
@@ -155,9 +178,9 @@ delete() {
 	if [ -z "$dbline" ]; then
 	    rc=1
 	else
-	    sed "/^$dbline$/d" "$file" > "$file.tmp"
-	    mv "$file.tmp" "$file"
-	    rm -f "$file.tmp"
+	    sed "/^$dbline$/d" "$FILE" > "$FILE.tmp"
+	    mv "$FILE.tmp" "$FILE"
+	    rm -f "$FILE.tmp"
 	    echo $line
 	fi
 
@@ -172,7 +195,7 @@ column_add() {
 
     new_row=$1
 
-    header=$(head -n 1 "$file")
+    header=$(head -n 1 "$FILE")
     new_header=$header";"$new_row
 
     echo "$new_header" 
@@ -180,8 +203,8 @@ column_add() {
     read answer
     [ ! $answer == "o" ] && [ ! $answer == "O" ] && [ ! $answer == "oui" ] && [ ! $answer == "Oui" ] && [ ! $answer == "OUI" ] && echo "Abandon" && echo $header && return 1
 
-    sed "s/^$header$/$new_header/" "$file" > "$file.tmp"
-    mv "$file.tmp" "$file"
+    sed "s/^$header$/$new_header/" "$FILE" > "$FILE.tmp"
+    mv "$FILE.tmp" "$FILE"
 
     echo $new_header
 }
@@ -191,7 +214,7 @@ column_delete() {
 
     row=$1
     
-    header=$(head -n 1 "$file")
+    header=$(head -n 1 "$FILE")
     index=$(_get_row_index $row)
     [ $? -ne 0 ] && echo "Colonne inexistante !" && return 1
 
