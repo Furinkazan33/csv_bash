@@ -18,32 +18,69 @@
 #set -e
 #set -o pipefail
 
-[ "$0" = "$BASH_SOURCE" ] && echo "Usage : . $BASH_SOURCE file_name" && exit 1
-[ -z $* ] && echo "Usage : . $BASH_SOURCE file_name" && return 1
-[ ! -f $1 ] && echo "No such file: $1" && return 1
+not_bash() {
+    echo "Your Shell is $0"
+    echo "This is a bash source file"
+}
+
+usage() {
+    echo "Usage : . csvedit.sh file_name"
+}
+
+not_execute() {
+    echo "This file is intended to be sourced not executed !"
+    usage
+}
+
+[ "$0" = "$BASH_SOURCE" ] && not_execute && exit 1
+[ "$0" != "bash" ] && not_bash && return 1
+[ $# -ne 1 ] && usage && return 1
+[ ! -f "$1" ] && echo "No such file: $1" && return 1
 
 
-# File sorted by id
-FILE=$1
-    
-# File header
-HEADER=()
 
-init_rows() {
+
+# Sort file by ID
+_sort_file() {
+    local def="$(head -n 1 "$FILE")"
+    local n=$(wc -l "$FILE" | cut -d" " -f1)
+    local sorted_data="$(tail -n $(($n - 1)) $FILE | sort -n)"
+
+    echo "$def" > $FILE
+    echo "$sorted_data" >> $FILE
+}
+
+_init() {
+    # Creating backup
+    folder="./.bak"
+    suffix=`date +%s`
+    mkdir $folder 2> /dev/null
+    cp $FILE $folder/$FILE.$suffix && {
+        echo "Creating backup file $folder/$FILE.$suffix OK"
+    } || { 
+        echo "Impossible to create backup file - enter to exit"
+        read
+        exit 1
+    }
+
+    # Sorting file on IDs
+    _sort_file
+
+    # Initiaze HEADERS
+    HEADERS=()
     local def=$(head -n 1 "$FILE")
     local OLDIFS=$IFS
 
     IFS=";" && for r in $def; do
-	HEADER+=($r)
+	    HEADERS+=($r)
     done
 
     IFS=$OLDIFS
 }
-init_rows
 
 _get_row_index() {
-    for i in ${!HEADER[@]}; do
-	[ $1 == "${HEADER[$i]}" ] && echo $(($i+1)) && return 0
+    for i in ${!HEADERS[@]}; do
+	    [ "$1" == "${HEADERS[$i]}" ] && echo $(($i+1)) && return 0
     done
     echo -1 && return 1
 }
@@ -53,7 +90,7 @@ file() {
 }
 
 headers() {
-    head -n 1 "$FILE"
+    echo ${HEADERS[@]}
 }
 
 find() {
@@ -75,7 +112,7 @@ limit() {
 }
 
 get() { 
-    [ ${#*} -ne 1 ] && echo "Usage: get field" && return 1
+    [ ${#*} -ne 1 ] && { echo "Usage: get field"; return 1; }
 
     index=$(_get_row_index "$1")
     [ $? -ne 0 ] && echo "Champs inconnu: $1" && return 1
@@ -86,7 +123,7 @@ get() {
 
 # Set can be done only on whole rows (ie, not after a get)
 set() {
-    [ ${#*} -ne 2 ] && echo "Usage: set field value" && return 1
+    [ ${#*} -ne 2 ] && { echo "Usage: set field value"; return 1; }
 
     index=$(_get_row_index "$1")
     [ $? -ne 0 ] && echo "Champs inconnu: $1" && return 1
@@ -153,7 +190,7 @@ save() {
         local id=$(echo $newline | get ID)
         local oldline=$(find ID $id)
 
-        if [ -z $oldline ]; then
+        if [ -z "$oldline" ]; then
             echo $newline | _insert
         else
             sed s/^${oldline}$/${newline}/ $FILE > $FILE.tmp
@@ -189,28 +226,41 @@ delete() {
     return $rc
 }
 
+_confirm() {
+    echo "Confirm ? (y/n)"
+    read answer
+    confirms="y Y yes YES Yes"
+    
+    local OLDIFS=$IFS
+    IFS=" " && for c in $confirms; do
+        echo $c
+        [ "$answer" == "$c" ] && return 0
+    done
+    IFS=$OLDIFS
+
+    return 1
+}
+
 # TODO: after
-column_add() {
-    [ ${#*} -ne 1 ] && [ ${#*} -ne 2 ]  && echo "Usage: column_add new_row [after_row]" && return 1
+header_add() {
+    [ ${#*} -ne 1 ] && [ ${#*} -ne 2 ]  && echo "Usage: header_add new_row [after_row]" && return 1
 
     new_row=$1
 
     header=$(head -n 1 "$FILE")
     new_header=$header";"$new_row
 
-    echo "$new_header" 
-    echo "Confirmer ? (o/n)"
-    read answer
-    [ ! $answer == "o" ] && [ ! $answer == "O" ] && [ ! $answer == "oui" ] && [ ! $answer == "Oui" ] && [ ! $answer == "OUI" ] && echo "Abandon" && echo $header && return 1
+    echo "$new_header"
+    _confirm || { echo "OK => $header"; return 1; }
 
     sed "s/^$header$/$new_header/" "$FILE" > "$FILE.tmp"
     mv "$FILE.tmp" "$FILE"
 
-    echo $new_header
+    echo "OK => $new_header"
 }
 
-column_delete() {
-    [ ${#*} -ne 1 ] && echo "Usage: column_delete row" && return 1
+header_delete() {
+    [ ${#*} -ne 1 ] && echo "Usage: header_delete row" && return 1
 
     row=$1
     
@@ -234,8 +284,8 @@ function help_fr() {
     echo -e "save\t\tEnregistre les lignes dans le fichier de travail"
     echo -e "delete\t\tSupprime les lignes"
     echo -e "headers\t\tAffiche les entetes des colonnes"
-    echo -e "column_add\t\tAjoute une colonne"
-    echo -e "column_delete\tSupprime une colonne"
+    echo -e "header_add\t\tAjoute une colonne"
+    echo -e "header_delete\tSupprime une colonne"
 }
 
 function help() {
@@ -251,8 +301,13 @@ function help() {
     echo -e "save\t\tSave the lines in the working file"
     echo -e "delete\t\tDelete the lines"
     echo -e "headers\t\tPrint the headers names"
-    echo -e "column_add\tAdd a column"
-    echo -e "column_delete\tRemove a column"
+    echo -e "header_add\tAdd a column"
+    echo -e "header_delete\tRemove a column"
 }
 
+
+
+FILE=$1
+_init
 help
+
