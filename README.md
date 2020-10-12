@@ -12,7 +12,7 @@ ID,NAME,AGE,CITY
 - Test commands :
 ```
 bash
-. csvedit.sh my_file.csv
+. csv_bash.sh my_file.csv
 
 Commands list :
 help            Print this help
