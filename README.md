@@ -2,11 +2,11 @@
 Powerfull Bash script to handle csv files (view, search, edit, replace, save, etc...)
 
 ## Example
-- Content of the test file :
+- Example file :
 ```
-ID;NAME;AGE;CITY
-1;Mathieu;35;Bordeaux
-2;Gertrude;102;Soulac
+ID,NAME,AGE,CITY
+1,Alex,35,Paris
+2,Sam,102,NY
 ```
 
 - Test commands :
@@ -26,18 +26,18 @@ new             Create a new line
 save            Save the lines in the working file
 delete          Delete the lines
 headers         Print the headers names
-column_add      Add a column
-column_delete   Remove a column
+c_add           Add a column
+c_delete        Remove a column
 
 
 find
-1;Mathieu;35;Bordeaux
-2;Gertrude;102;Soulac
+1,Alex,35,Paris
+2,Sam,102,NY
 
 find ID 1 | set AGE 55 | set NAME Bastian | save
-1;Bastian;55;Bordeaux
+1,Bastian,55,Paris
 
 find
-1;Bastian;55;Bordeaux
-2;Gertrude;102;Soulac
+1,Bastian,55,Paris
+2,Sam,102,NY
 ```
