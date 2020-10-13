@@ -29,7 +29,12 @@ find_one() {
 }
 
 limit() {
-    head -n $2 | tail -$(($2 - $1 + 1)) < "/dev/stdin"
+    [ $# -ne 1 ] && [ $# -ne 2 ] && { echo "Usage: limit [min] <max>"; return 1; }
+    [ $# -eq 1 ] && { min=0; max=$1; }
+    [ $# -eq 2 ] && { min=$1; max=$2; }
+    [ $max -lt $min ] && { echo "Usage: limit [min] <max>"; return 1; }
+
+    head -n $max | tail -$(($max - $min + 1)) < "/dev/stdin"
 }
 
 get() { 
@@ -58,7 +63,7 @@ set() {
 
 new() {
     ([ $# -ne 1 ] || [ ! `_check_new_line $1` -eq 0 ]) && { 
-        newline=$(headers | cut -d"$SEPARATOR" -f2-)
+        newline=$(head -1 $FILE | cut -d"$SEPARATOR" -f2-)
         echo "Usage: new \"$newline\""
         return 1
     }

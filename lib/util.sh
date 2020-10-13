@@ -24,16 +24,16 @@ _new_id(){
 
 # Count the number of columns from a row (header or data)
 _count_columns() {
-    OLDIFS=$IFS
-    IFS="$SEPARATOR" && echo $* | wc -w
-    IFS=$OLDIFS
+    row="$*"
+    sep="${row//[^$SEPARATOR]}"
+    echo $((${#sep} + 1))
 }
 
 # Check if the new line as the required number of columns
 _check_new_line() {
     local row=$*
     local c_col=$(_count_columns $row)
-    local c_head=$(_count_columns `headers`)
+    local c_head=$(_count_columns `head -1 $FILE`)
 
     [ $c_col -eq $(($c_head - 1)) ] && { echo 0; return 0; }
     echo 1; return 1;
